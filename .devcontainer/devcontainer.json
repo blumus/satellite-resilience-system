@@ -1,0 +1,26 @@
+{
+	"name": "NVIDIA L4T ML Dev",
+	"image": "nvcr.io/nvidia/l4t-ml:r36.2.0-py3",
+	"overrideCommand": true,
+	"workspaceMount": "source=${localWorkspaceFolder},target=/home/extra,type=bind,consistency=cached",
+	"workspaceFolder": "/home/extra",
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-python.python",
+				"ms-python.black-formatter",
+				"ms-python.flake8"
+			],
+			"settings": {
+				"python.defaultInterpreterPath": "/usr/local/bin/python",
+				"python.linting.enabled": true,
+				"python.formatting.provider": "black"
+			}
+		}
+	},
+	"runArgs": [
+		"--network=host",
+		"--memory=4g"
+	],
+	"shutdownAction": "stopContainer"
+}
