@@ -1,35 +1,5 @@
-# Byte-compiled / optimized files
+.venv/
+*.jpg
+*.pt
 __pycache__/
 *.pyc
-
-# Virtual Environments
-.venv/
-venv/
-env/
-
-# IDE / Editor configuration
-.vscode/
-.idea/
-
-# Build artifacts
-dist/
-build/
-*.egg-info/
-
-# Log files
-*.log
-logs/
-
-# --- Project-specific ignores ---
-
-# Generated media outputs (as per DEFINITION.md)
-*.jpg
-*.jpeg
-*.png
-*.mov
-*.mp4
-*.avi
-
-# AI/ML model files (e.g., PyTorch)
-*.pt
-*.pth
