@@ -1,359 +1,244 @@
-# Satellite Resilience System - System Architecture
+# Satellite Resilience System Architecture
 
-## 📋 Table of Contents
-1. [System Overview](#system-overview)
-2. [High-Level Architecture](#high-level-architecture)
-3. [Resilience Mechanisms](#resilience-mechanisms)
-4. [Component Specifications](#component-specifications)
-5. [Data Flow Architecture](#data-flow-architecture)
-6. [Failure Scenarios & Recovery](#failure-scenarios--recovery)
-7. [Security Architecture](#security-architecture)
-8. [Implementation Guidelines](#implementation-guidelines)
+## System Overview
+A robust, fault-tolerant system designed to process satellite data streams (camera, sensors, communications) with resilience against board resets, faulty software, and security threats. Built for M1 ARM chip deployment with AI-powered processing capabilities.
 
----
+## Core Components
 
-## 🎯 System Overview
+### Input Manager
+- **Purpose**: Centralized input handling for all data sources
+- **Interfaces**:
+  - **Camera/Sensors**: File-based monitoring (predictable data streams)
+  - **Ground Commands**: gRPC interface (bursty, real-time communication)
+- **Responsibilities**:
+  - File system monitoring for camera/sensor data
+  - gRPC server for ground command reception
+  - Input validation and sanitization
+  - Task queuing for processing
 
-### Purpose
-The Satellite Resilience System is a **mock embedded system architecture** designed to demonstrate robust fault tolerance and recovery mechanisms in satellite environments. The system runs on a single **M1 ARM chip** as a substitute for **NVIDIA Jetson**, processing mock data streams including video feeds and sensor readings.
+### Processing Queue
+- **Technology**: Celery + SQLite backend
+- **Purpose**: Persistent, resilient task distribution
+- **Benefits**: Python-native, file-based persistence, automatic recovery
 
-### Key Requirements
-- **Resilience against board resets** - Automatic recovery and restart
-- **Fault tolerance for software failures** - Component-level recovery without full system restart
-- **Security against threats** - Process isolation and access control
-- **Limited uplink constraints** - Minimal communication requirements for patches/updates
+### Processing Engines
+Three specialized engines handling different data types:
 
----
+#### Picture Processing Engine
+- YOLO object detection (`etc/test/yolo_bus_detection.py`)
+- Image classification and analysis
+- Video stream processing
+- AI model inference
 
-## 🏗️ High-Level Architecture
+#### Sensor Processing Engine
+- Sensor data analysis and validation
+- Trend detection and anomaly identification
+- Data aggregation and reporting
+- Environmental monitoring
 
-### System Block Diagram
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    Satellite Resilience System                  │
-├─────────────────────────────────────────────────────────────────┤
-│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐        │
-│  │   Input     │    │  Processing │    │   Output    │        │
-│  │  Manager    │───▶│   Engine    │───▶│  Manager    │        │
-│  └─────────────┘    └─────────────┘    └─────────────┘        │
-│         │                   │                   │              │
-│         ▼                   ▼                   ▼              │
-│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐        │
-│  │  Sensor     │    │     AI      │    │   Storage   │        │
-│  │  Simulator  │    │  Pipeline   │    │   Manager   │        │
-│  └─────────────┘    └─────────────┘    └─────────────┘        │
-├─────────────────────────────────────────────────────────────────┤
-│                    Resilience Layer                             │
-│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐        │
-│  │   Watchdog  │    │   Fault     │    │  Security   │        │
-│  │   Monitor   │    │  Detector   │    │  Monitor    │        │
-│  └─────────────┘    └─────────────┘    └─────────────┘        │
-├─────────────────────────────────────────────────────────────────┤
-│                    System Layer                                 │
-│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐        │
-│  │   State     │    │   Logging   │    │   Recovery  │        │
-│  │  Manager    │    │   System    │    │   Engine    │        │
-│  └─────────────┘    └─────────────┘    └─────────────┘        │
-└─────────────────────────────────────────────────────────────────┘
-```
+#### Communication Processing Engine
+- Ground command execution
+- Response generation and formatting
+- Command validation and safety checks
+- System status reporting
 
-### Component Hierarchy
-```
-System Root
-├── Resilience Layer (High Priority)
-│   ├── Watchdog Monitor
-│   ├── Fault Detector
-│   └── Security Monitor
-├── Application Layer (Medium Priority)
-│   ├── Input Manager
-│   ├── Processing Engine
-│   └── Output Manager
-├── Service Layer (Low Priority)
-│   ├── Sensor Simulator
-│   ├── AI Pipeline
-│   └── Storage Manager
-└── System Layer (Background)
-    ├── State Manager
-    ├── Logging System
-    └── Recovery Engine
-```
+### Output Manager
+- **Purpose**: Centralized output handling and distribution
+- **Responsibilities**:
+  - Processed data delivery to ground control
+  - Result storage and management
+  - Output format standardization
 
----
+### Cleanup Queue
+- **Purpose**: Parallel file deletion management
+- **Operation**: Processing Engine marks files for deletion → Cleanup Queue handles actual deletion
+- **Benefits**: Non-blocking cleanup, better resource management
 
-## 🛡️ Resilience Mechanisms
+## Resilience Components
 
-### 1. Board Reset Recovery
-```
-┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│   System    │───▶│   State     │───▶│  Recovery   │
-│   Startup   │    │  Checker    │    │  Engine     │
-└─────────────┘    └─────────────┘    └─────────────┘
-       │                   │                   │
-       ▼                   ▼                   ▼
-┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│  Hardware   │    │  Component  │    │  Service    │
-│  Init       │    │  Status     │    │  Restart    │
-└─────────────┘    └─────────────┘    └─────────────┘
-```
+### Security Monitor
+- **Unauthorized access detection** - Monitors for unauthorized system access attempts
+- **Suspicious command detection** - Identifies unusual or dangerous ground commands
+- **Resource abuse detection** - Monitors for excessive resource consumption
 
-**Recovery Flow:**
-1. **Hardware Initialization** - Basic system startup
-2. **State Checker** - Verify last known good state
-3. **Component Status** - Check which services were running
-4. **Recovery Engine** - Restart failed components
-5. **Service Restart** - Resume normal operation
+### Fault Detector
+- **Process crash detection** - Monitors component health and status
+- **Memory leak detection** - Tracks memory usage patterns over time
+- **High CPU usage detection** - Identifies stuck processes and infinite loops
+- **Disk space monitoring** - Prevents storage exhaustion
+- **Communication failure detection** - Monitors inter-component connectivity
 
-### 2. Fault Tolerance
-```
-┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│   Fault     │───▶│   Fault     │───▶│  Component  │
-│  Detection  │    │  Isolation  │    │  Restart    │
-└─────────────┘    └─────────────┘    └─────────────┘
-       │                   │                   │
-       ▼                   ▼                   ▼
-┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│  Health     │    │  Process    │    │  State      │
-│  Monitor    │    │  Isolation  │    │  Recovery   │
-└─────────────┘    └─────────────┘    └─────────────┘
-```
+### Watchdog Monitor
+- **Fault-dependent responses**:
+  - **Minor faults** → Restart just that component
+  - **Major faults** → Reset the entire system
+  - **Critical faults** → Trigger full system reset
+- **Automatic recovery** - Self-healing without manual intervention
 
-**Fault Handling:**
-1. **Health Monitor** - Continuous component health checks
-2. **Fault Detection** - Identify failing components
-3. **Fault Isolation** - Prevent failure propagation
-4. **Process Isolation** - Contain faulty processes
-5. **Component Restart** - Restart failed components
-6. **State Recovery** - Restore component state
+## Data Flow
 
-### 3. Security Architecture
-```
-┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│   Access    │───▶│   Process   │───▶│   Threat    │
-│  Control    │    │  Isolation  │    │  Detection  │
-└─────────────┘    └─────────────┘    └─────────────┘
-       │                   │                   │
-       ▼                   ▼                   ▼
-┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│  Resource   │    │  Network    │    │  Incident   │
-│  Limits     │    │  Isolation  │    │  Response   │
-└─────────────┘    └─────────────┘    └─────────────┘
-```
+### Camera Data Flow
+1. Camera → saves image/video file
+2. Input Manager → detects new file, validates it
+3. Input Manager → sends to Processing Queue
+4. Picture Processing Engine → picks up task, processes with AI
+5. Picture Processing Engine → sends result to Output Manager
+6. Picture Processing Engine → marks original file for cleanup
+7. Cleanup Queue → deletes original file
 
-**Security Measures:**
-1. **Access Control** - Restricted system access
-2. **Process Isolation** - Separate process spaces
-3. **Resource Limits** - Prevent resource exhaustion
-4. **Network Isolation** - Limited external communication
-5. **Threat Detection** - Monitor for suspicious activity
-6. **Incident Response** - Automated threat response
+### Sensor Data Flow
+1. Sensors → save readings to data files
+2. Input Manager → detects new sensor file, validates it
+3. Input Manager → sends to Processing Queue
+4. Sensor Processing Engine → picks up task, analyzes data
+5. Sensor Processing Engine → sends processed results to Output Manager
+6. Sensor Processing Engine → marks original sensor file for cleanup
+7. Cleanup Queue → deletes original sensor file
 
----
+### Communication Data Flow
+1. Ground Control → sends command via gRPC
+2. Input Manager → receives command, validates it
+3. Input Manager → sends to Processing Queue
+4. Communication Processing Engine → picks up task, executes command
+5. Communication Processing Engine → sends response to Output Manager
+6. Output Manager → sends response back to ground control via gRPC
 
-## 🔧 Component Specifications
+## Failure Scenarios
 
-### Core Components
+### Scenario 1: Single Processing Engine Failure
+- **What happens**: One Processing Engine crashes
+- **Response**: Fault Detector detects crash, Watchdog restarts just that engine
+- **Result**: Minimal disruption, tasks resume automatically
 
-#### Input Manager
-- **Purpose:** Manage data streams (video, sensor data)
-- **Resilience:** Automatic reconnection on stream failure
-- **Interface:** Standardized data format for all inputs
+### Scenario 2: Multiple Processing Engine Failure
+- **What happens**: Several engines crash simultaneously
+- **Response**: Fault Detector detects multiple failures, Watchdog triggers full system reset
+- **Result**: System reboots, all engines restart fresh
 
-#### Processing Engine
-- **Purpose:** Coordinate AI pipeline and data processing
-- **Resilience:** Graceful degradation on component failure
-- **Interface:** Modular processing pipeline
+### Scenario 3: Input Manager Failure
+- **What happens**: Input Manager stops detecting new files/commands
+- **Response**: Fault Detector detects Input Manager failure, Watchdog restarts it
+- **Result**: Some data might be lost during restart, but system continues
 
-#### Output Manager
-- **Purpose:** Handle processed data storage and transmission
-- **Resilience:** Local caching on transmission failure
-- **Interface:** Configurable output formats
+### Scenario 4: Processing Queue Failure
+- **What happens**: Queue system (Celery + SQLite) stops working
+- **Response**: Fault Detector detects queue failure, Watchdog triggers full system reset
+- **Result**: System reboots, everything starts fresh
 
-#### AI Pipeline
-- **Purpose:** Process video and sensor data using ML models
-- **Resilience:** Fallback to simpler models on failure
-- **Interface:** Standardized model interface
+## Security Considerations
 
-### Resilience Components
+### Access Control
+- **Ground commands** → Only accepted from authorized sources
+- **Authentication** → Commands must include valid credentials
+- **Authorization** → Commands are checked against allowed operations
+- **Result**: Unauthorized commands are rejected
 
-#### Watchdog Monitor
-- **Purpose:** Monitor system health and trigger recovery
-- **Mechanism:** Heartbeat monitoring with timeout detection
-- **Action:** System restart on critical failure
+### Command Validation
+- **Input sanitization** → Commands are checked for dangerous content
+- **Parameter limits** → Commands can't request unlimited resources
+- **Rate limiting** → Commands can't be sent too frequently
+- **Result**: Malicious or dangerous commands are blocked
 
-#### Fault Detector
-- **Purpose:** Identify and classify system faults
-- **Mechanism:** Pattern recognition and anomaly detection
-- **Action:** Trigger appropriate recovery procedures
+### Resource Monitoring
+- **Memory limits** → Processes can't use unlimited memory
+- **CPU limits** → Processes can't consume all CPU resources
+- **Disk limits** → Processes can't fill up all storage
+- **Result**: Resource abuse is detected and stopped
 
-#### Security Monitor
-- **Purpose:** Detect and respond to security threats
-- **Mechanism:** Behavior analysis and signature detection
-- **Action:** Process isolation and threat containment
+## Implementation Guidelines
 
----
+### Component Isolation
+- **Each component** → runs as a separate process
+- **Independent restart** → One component can restart without affecting others
+- **Shared resources** → Only through well-defined interfaces (queues, files)
+- **Result**: System is modular and resilient
 
-## 🔄 Data Flow Architecture
-
-### Normal Operation Flow
-```
-Sensor Data ──▶ Input Manager ──▶ Processing Engine ──▶ AI Pipeline ──▶ Output Manager
-     │              │                    │                    │              │
-     ▼              ▼                    ▼                    ▼              ▼
-Mock Sensors   Data Validation      Task Scheduling      Model Inference   Storage/Transmit
-```
-
-### Failure Recovery Flow
-```
-Fault Detection ──▶ Fault Classification ──▶ Recovery Strategy ──▶ Component Restart
-      │                    │                        │                    │
-      ▼                    ▼                        ▼                    ▼
-Health Monitor       Fault Analyzer           Recovery Engine       State Restore
-```
-
-### Security Flow
-```
-Access Request ──▶ Authentication ──▶ Authorization ──▶ Resource Access ──▶ Audit Log
-      │                │                │                │                │
-      ▼                ▼                ▼                ▼                ▼
-Request Filter    Identity Check    Permission Check   Access Control   Logging System
-```
-
----
-
-## 🚨 Failure Scenarios & Recovery
-
-### Scenario 1: Board Reset
-**Trigger:** Hardware failure, power loss, watchdog timeout
-**Detection:** System startup sequence
-**Recovery:**
-1. Hardware initialization
-2. State restoration from persistent storage
-3. Component health checks
-4. Service restart in priority order
-5. System status verification
-
-### Scenario 2: Component Failure
-**Trigger:** Process crash, memory leak, resource exhaustion
-**Detection:** Health monitor, fault detector
-**Recovery:**
-1. Fault isolation
-2. Process termination
-3. Resource cleanup
-4. Component restart
-5. State restoration
-
-### Scenario 3: Security Breach
-**Trigger:** Unauthorized access, suspicious behavior
-**Detection:** Security monitor, anomaly detection
-**Recovery:**
-1. Threat isolation
-2. Process termination
-3. Access restriction
-4. Incident logging
-5. Recovery procedures
-
----
-
-## 🔒 Security Architecture
-
-### Access Control Model
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   External      │    │   Internal      │    │   System        │
-│   Interface     │    │   Services      │    │   Resources     │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         ▼                       ▼                       ▼
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│  Authentication │    │  Authorization  │    │  Resource       │
-│     Layer       │    │     Layer       │    │   Control       │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-```
-
-### Security Layers
-1. **Network Security** - Limited external communication
-2. **Process Security** - Isolated process spaces
-3. **Resource Security** - Controlled resource access
-4. **Data Security** - Encrypted sensitive data
-5. **Audit Security** - Comprehensive logging
-
----
-
-## 🛠️ Implementation Guidelines
-
-### Development Principles
-1. **Fail-Safe Design** - System fails to safe state
-2. **Graceful Degradation** - Reduced functionality on failure
-3. **Defense in Depth** - Multiple security layers
-4. **Minimal Trust** - Verify everything, trust nothing
-
-### Code Structure
-```
-src/
-├── core/           # Core system components
-├── resilience/     # Resilience mechanisms
-├── security/       # Security components
-├── services/       # Application services
-├── utils/          # Utility functions
-└── tests/          # Test suites
-```
+### Error Handling
+- **Graceful degradation** → If one part fails, others continue working
+- **Detailed logging** → Record what went wrong for debugging
+- **Recovery actions** → Automatic steps to fix common problems
+- **Result**: System handles errors without crashing
 
 ### Testing Strategy
-1. **Unit Tests** - Individual component testing
-2. **Integration Tests** - Component interaction testing
-3. **Failure Tests** - Simulated failure scenarios
-4. **Security Tests** - Vulnerability assessment
+- **Unit tests** → Test each component individually
+- **Integration tests** → Test how components work together
+- **Failure injection** → Intentionally break parts to test recovery
+- **Stress tests** → Test system under heavy load and extreme conditions
+- **Result**: System is proven to work under various conditions
 
-### Deployment Considerations
-1. **Containerization** - Docker-based deployment
-2. **Resource Limits** - Memory and CPU constraints
-3. **Monitoring** - Health check endpoints
-4. **Logging** - Comprehensive system logging
+## Future Enhancements
 
----
+### Container Orchestration (k3s)
+- **What it is**: Manage multiple containers across different machines
+- **Benefits**: Better resource management, easier scaling
+- **When to add**: When you need to run on multiple boards
+- **Result**: More sophisticated deployment and management
 
-## 📊 Performance Requirements
+### Advanced AI Models
+- **What it is**: More sophisticated AI processing beyond YOLO
+- **Examples**: Multi-modal AI, real-time video analysis, predictive analytics
+- **Benefits**: Better data processing, more intelligent responses
+- **When to add**: When basic AI processing is working well
+- **Result**: More intelligent satellite system
 
-### System Performance
-- **Startup Time:** < 30 seconds from cold boot
-- **Recovery Time:** < 10 seconds for component failure
-- **Memory Usage:** < 2GB total system memory
-- **CPU Usage:** < 80% under normal load
+### Ground Station Integration
+- **What it is**: Connect to another card/board that handles ground control
+- **Examples**: Communication card, command processing card, telemetry card
+- **Benefits**: Distributed processing, specialized ground control handling
+- **When to add**: When mock system is fully tested and stable
+- **Result**: Multi-board satellite system with dedicated ground control
 
-### Resilience Performance
-- **Fault Detection:** < 5 seconds for critical failures
-- **Recovery Success:** > 95% automatic recovery rate
-- **Data Loss:** < 1% on system failure
-- **Security Response:** < 1 second for threat detection
+## System Block Diagram
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Camera        │    │   Sensors       │    │ Ground Control  │
+│   (Files)       │    │   (Files)       │    │   (gRPC)        │
+└─────────┬───────┘    └─────────┬───────┘    └─────────┬───────┘
+          │                      │                      │
+          └──────────────────────┼──────────────────────┘
+                                 │
+                    ┌─────────────▼─────────────┐
+                    │      Input Manager        │
+                    │  (File Monitor + gRPC)   │
+                    └─────────────┬─────────────┘
+                                  │
+                    ┌─────────────▼─────────────┐
+                    │    Processing Queue       │
+                    │   (Celery + SQLite)      │
+                    └─────────────┬─────────────┘
+                                  │
+          ┌───────────────────────┼───────────────────────┐
+          │                       │                       │
+┌─────────▼─────────┐  ┌─────────▼─────────┐  ┌─────────▼─────────┐
+│ Picture Processing│  │Sensor Processing │  │Communication     │
+│ Engine            │  │Engine            │  │Processing Engine │
+└─────────┬─────────┘  └─────────┬─────────┘  └─────────┬─────────┘
+          │                      │                      │
+          └──────────────────────┼──────────────────────┘
+                                 │
+                    ┌─────────────▼─────────────┐
+                    │     Output Manager        │
+                    └─────────────┬─────────────┘
+                                  │
+                    ┌─────────────▼─────────────┐
+                    │    Cleanup Queue          │
+                    └───────────────────────────┘
 
----
+┌─────────────────────────────────────────────────────────────────┐
+│                    Resilience Components                        │
+├─────────────────┬─────────────────┬───────────────────────────┤
+│ Security Monitor│ Fault Detector  │   Watchdog Monitor        │
+│                 │                 │                           │
+└─────────────────┴─────────────────┴───────────────────────────┘
+```
 
-## 🔮 Future Enhancements
+## Data Flow Diagram
+```
+Input Sources → Input Manager → Processing Queue → Processing Engines
+                                                      ↓
+Output Manager ← Processed Results ← AI Processing ← Data Files
+     ↓
+Ground Control (via gRPC)
 
-### Phase 2 Features
-- **Advanced ML Models** - More sophisticated AI processing
-- **Distributed Processing** - Multi-node architecture
-- **Advanced Security** - Machine learning threat detection
-- **Cloud Integration** - Remote monitoring and control
-- **Container Orchestration** - k3s lightweight Kubernetes for multi-node management
-
-### Phase 3 Features
-- **Real-time Analytics** - Live system performance monitoring
-- **Predictive Maintenance** - Failure prediction and prevention
-- **Advanced Recovery** - Self-healing system capabilities
-- **Performance Optimization** - Dynamic resource allocation
-- **Cluster Management** - Multi-satellite constellation coordination via k3s
-- **Edge Computing** - Distributed AI processing across satellite nodes
-
----
-
-## 📚 References
-
-- [Satellite System Design Principles](https://example.com)
-- [Embedded System Resilience Patterns](https://example.com)
-- [Security Best Practices for IoT](https://example.com)
-- [Fault Tolerance in Distributed Systems](https://example.com)
-
----
-
-*This document serves as the primary reference for developers implementing the Satellite Resilience System. All architectural decisions should align with the principles and patterns described herein.*
+Cleanup Queue ← Marked Files (parallel process)
+```
