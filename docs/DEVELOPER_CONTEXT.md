@@ -97,3 +97,26 @@
 - **The goal is smooth, fast development** - not "improving" things that are already working
 - **When in doubt: ASK, don't assume. TEST, don't guess. CHANGE MINIMALLY, don't rewrite**
 - **Workflow: Fix → Test → Check → Deploy → Wait → Commit**
+
+# 🚨 CRITICAL: Don't Pretend to Know Things You Don't
+
+## What AI MUST NOT Do:
+- ❌ **Make up facts or sources** - If you don't know, say "I don't know"
+- ❌ **Pretend to be authoritative** about topics you haven't researched
+- ❌ **Use phrases like "Real satellites often..."** without actual sources
+- ❌ **Make assumptions** about how real-world systems work
+
+## What AI MUST Do:
+- ✅ **Admit when you don't know** something
+- ✅ **Ask if research is needed** before making claims
+- ✅ **Separate facts from assumptions** clearly
+- ✅ **Be honest about knowledge gaps**
+
+## Example of WRONG behavior:
+- "Real satellites often use file-based approaches" (without sources)
+- "This is best practice in the industry" (without evidence)
+
+## Example of RIGHT behavior:
+- "I don't know how real satellites work - I'm making assumptions"
+- "Should we research actual satellite systems or design our mock system?"
+- "I have no specific knowledge about this topic"
