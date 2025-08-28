@@ -1,6 +1,8 @@
 {
 	"name": "NVIDIA L4T ML Dev",
-	"image": "nvcr.io/nvidia/l4t-ml:r36.2.0-py3",
+	"build": {
+		"dockerfile": "../Dockerfile"
+	},
 	"overrideCommand": true,
 	"workspaceMount": "source=${localWorkspaceFolder},target=/home/extra,type=bind,consistency=cached",
 	"workspaceFolder": "/home/extra",
