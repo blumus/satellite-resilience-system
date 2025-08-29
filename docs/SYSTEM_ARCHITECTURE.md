@@ -5,21 +5,29 @@ A robust, fault-tolerant system designed to process satellite data streams (came
 
 ## Core Components
 
-### Input Manager
-- **Purpose**: Centralized input handling for all data sources
-- **Interfaces**:
-  - **Camera/Sensors**: File-based monitoring (predictable data streams)
-  - **Ground Commands**: gRPC interface (bursty, real-time communication)
+### File Input Manager
+- **Purpose**: Handles all file-based data ingestion.
+- **Interface**: File system monitoring for camera and sensor data.
 - **Responsibilities**:
-  - File system monitoring for camera/sensor data
-  - gRPC server for ground command reception
-  - Input validation and sanitization
-  - Task queuing for processing
+  - Monitors designated directories for new files.
+  - Validates incoming files.
+  - Creates and sends processing tasks to the `Processing Queue`.
+
+### Command Input Manager (gRPC)
+- **Purpose**: Handles all real-time command and control from the ground.
+- **Interface**: gRPC server.
+- **Responsibilities**:
+  - Listens for incoming gRPC commands.
+  - Authenticates and authorizes commands.
+  - Creates and sends processing tasks to the `Processing Queue`.
 
 ### Processing Queue
 - **Technology**: Celery + SQLite backend
 - **Purpose**: Persistent, resilient task distribution
-- **Benefits**: Python-native, file-based persistence, automatic recovery
+- **Benefits**:
+  - **Self-Contained**: Uses a simple file for the queue, requiring no external services like RabbitMQ. This is ideal for a single-node embedded system.
+  - **Sufficient Resilience**: Ensures tasks persist even if a component crashes, meeting the core resilience goal for the MVP.
+  - **Simplicity**: Avoids the setup and management overhead of a separate message broker server.
 
 ### Processing Engines
 Three specialized engines handling different data types:
@@ -45,11 +53,12 @@ Three specialized engines handling different data types:
 - System status reporting
 
 ### Output Manager
-- **Purpose**: Centralized output handling and distribution
+- **Purpose**: Audits and finalizes processed data, creating a verifiable record of system output.
 - **Responsibilities**:
-  - Processed data delivery to ground control
-  - Result storage and management
-  - Output format standardization
+  - Monitors a staging directory for newly processed files from the engines.
+  - Moves validated files to a final, official output directory.
+  - Generates and maintains an `output_manifest.log` to provide an auditable record of all successfully processed data.
+  - (Future) Handles delivery of data to ground control.
 
 ### Cleanup Queue
 - **Purpose**: Parallel file deletion management
@@ -57,42 +66,22 @@ Three specialized engines handling different data types:
 - **Cleanup Timing**: Files are deleted immediately when marked for cleanup
 - **Benefits**: Non-blocking cleanup, better resource management
 
-## Resilience Components
-
-### Security Monitor
-- **Unauthorized access detection** - Monitors for unauthorized system access attempts
-- **Suspicious command detection** - Identifies unusual or dangerous ground commands
-- **Resource abuse detection** - Monitors for excessive resource consumption
-
-### Fault Detector
-- **Process crash detection** - Monitors component health and status
-- **Memory leak detection** - Tracks memory usage patterns over time
-- **High CPU usage detection** - Identifies stuck processes and infinite loops
-- **Disk space monitoring** - Prevents storage exhaustion
-- **Communication failure detection** - Monitors inter-component connectivity
-
-### Watchdog Monitor
-- **Fault-dependent responses**:
-  - **Minor faults** → Restart just that component
-  - **Major faults** → Reset the entire system
-  - **Critical faults** → Trigger full system reset
-- **Automatic recovery** - Self-healing without manual intervention
-
 ## Data Flow
 
 ### Camera Data Flow
 1. Camera → saves image/video file
-2. Input Manager → detects new file, validates it
-3. Input Manager → sends to Processing Queue
+2. File Input Manager → detects new file, validates it
+3. File Input Manager → sends to Processing Queue
 4. Picture Processing Engine → picks up task, processes with AI
-5. Picture Processing Engine → sends result to Output Manager
-6. Picture Processing Engine → marks original file for cleanup
-7. Cleanup Queue → deletes original file
+5. Picture Processing Engine → saves result to a temporary staging directory
+6. Output Manager → detects new file, moves it to the final output directory, and updates the manifest log
+7. Picture Processing Engine → marks original file for cleanup
+8. Cleanup Queue → deletes original file
 
 ### Sensor Data Flow
 1. Sensors → save readings to data files
-2. Input Manager → detects new sensor file, validates it
-3. Input Manager → sends to Processing Queue
+2. File Input Manager → detects new sensor file, validates it
+3. File Input Manager → sends to Processing Queue
 4. Sensor Processing Engine → picks up task, analyzes data
 5. Sensor Processing Engine → sends processed results to Output Manager
 6. Sensor Processing Engine → marks original sensor file for cleanup
@@ -100,8 +89,8 @@ Three specialized engines handling different data types:
 
 ### Communication Data Flow
 1. Ground Control → sends command via gRPC
-2. Input Manager → receives command, validates it
-3. Input Manager → sends to Processing Queue
+2. Command Input Manager → receives command, validates it
+3. Command Input Manager → sends to Processing Queue
 4. Communication Processing Engine → picks up task, executes command
 5. Communication Processing Engine → sends response to Output Manager
 6. Output Manager → sends response back to ground control via gRPC
@@ -118,10 +107,15 @@ Three specialized engines handling different data types:
 - **Response**: Fault Detector detects multiple failures, Watchdog triggers full system reset
 - **Result**: System reboots, all engines restart fresh
 
-### Scenario 3: Input Manager Failure
-- **What happens**: Input Manager stops detecting new files/commands
-- **Response**: Fault Detector detects Input Manager failure, Watchdog restarts it
-- **Result**: Some data might be lost during restart, but system continues
+### Scenario 3a: File Input Manager Failure
+- **What happens**: File Input Manager crashes and stops detecting new files.
+- **Response**: Fault Detector detects failure, Watchdog restarts it.
+- **Result**: Ground commands continue to be processed. File processing resumes after restart.
+
+### Scenario 3b: Command Input Manager Failure
+- **What happens**: The gRPC server crashes.
+- **Response**: Fault Detector detects failure, Watchdog restarts it.
+- **Result**: File-based processing is unaffected. Ground command capability is restored after restart.
 
 ### Scenario 4: Processing Queue Failure
 - **What happens**: Queue system (Celery + SQLite) stops working
@@ -169,7 +163,25 @@ Three specialized engines handling different data types:
 - **Stress tests** → Test system under heavy load and extreme conditions
 - **Result**: System is proven to work under various conditions
 
+## MVP Implementation Strategy
+
+This section outlines the focused plan for the initial 2.5-day Minimum Viable Product (MVP). The components and features described below represent a subset of the complete target architecture described in the main body of this document. The goal is to deliver a demonstrable, resilient system by prioritizing a single, end-to-end data flow. Features from the target architecture not included in the MVP (e.g., Sensor and Communication engines) are deferred for future development cycles.
+
+### 1. Core Component Focus
+- **Scope**: The MVP will implement the **Camera Data Flow** only.
+- **Components**: This includes the `File Input Manager`, the `Picture Processing Engine`, the `Output Manager`, and the associated `Processing Queue` and `Cleanup Queue`.
+- **Rationale**: Focusing on a single data path allows for a complete, end-to-end demonstration of the architecture's resilience principles within the limited timeframe.
+
+### 2. Resilience and Monitoring
+- **Technology**: Process supervision and resilience will be managed by **`systemd`**.
+- **Implementation**: Each core component will run as a separate `systemd` service.
+- **Restart Policy**: Service files will be configured with `Restart=on-failure` to automatically restart any component that crashes, fulfilling the primary resilience requirement.
+- **Health Checks**: Components will integrate with the `systemd` watchdog mechanism by sending periodic "heartbeat" signals. This allows `systemd` to detect and restart not only crashed processes but also hung or frozen ones.
+- **Rationale**: Using `systemd` leverages a robust, industry-standard tool for process management, providing a powerful resilience foundation without the need to build a custom supervisor from scratch for the MVP.
+
 ## Future Enhancements
+
+The items listed below are potential next steps that can be pursued after the MVP is stable. They are not listed in a strict order of priority. The decision to implement these enhancements, or to first complete the remaining components of the target architecture (like the Sensor and Communication engines), will be based on the project's evolving requirements.
 
 ### Container Orchestration (k3s)
 - **What it is**: Manage multiple containers across different machines
@@ -190,6 +202,14 @@ Three specialized engines handling different data types:
 - **Benefits**: Distributed processing, specialized ground control handling
 - **When to add**: When mock system is fully tested and stable
 - **Result**: Multi-board satellite system with dedicated ground control
+
+### Custom Resilience Framework
+- **What it is**: A more sophisticated, application-aware resilience layer to complement or replace the foundational `systemd` services.
+- **Benefits**: Finer-grained control over fault detection and recovery logic.
+- **Components**:
+  - **Security Monitor**: Detects unauthorized access, suspicious commands, and resource abuse.
+  - **Fault Detector**: Monitors for specific application-level faults like memory leaks, high CPU usage, and inter-component communication failures.
+  - **Watchdog Monitor**: Implements complex, fault-dependent responses (e.g., restarting a component vs. resetting the system).
 
 ## System Block Diagram
 ```
