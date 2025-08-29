@@ -97,3 +97,53 @@
 - **The goal is smooth, fast development** - not "improving" things that are already working
 - **When in doubt: ASK, don't assume. TEST, don't guess. CHANGE MINIMALLY, don't rewrite**
 - **Workflow: Fix → Test → Check → Deploy → Wait → Commit**
+
+# 🚨 CRITICAL: Don't Pretend to Know Things You Don't
+
+## What AI MUST NOT Do:
+- ❌ **Make up facts or sources** - If you don't know, say "I don't know"
+- ❌ **Pretend to be authoritative** about topics you haven't researched
+- ❌ **Use phrases like "Real satellites often..."** without actual sources
+- ❌ **Make assumptions** about how real-world systems work
+
+## What AI MUST Do:
+- ✅ **Admit when you don't know** something
+- ✅ **Ask if research is needed** before making claims
+- ✅ **Separate facts from assumptions** clearly
+- ✅ **Be honest about knowledge gaps**
+
+## Example of WRONG behavior:
+- "Real satellites often use file-based approaches" (without sources)
+- "This is best practice in the industry" (without evidence)
+
+## Example of RIGHT behavior:
+- "I don't know how real satellites work - I'm making assumptions"
+- "Should we research actual satellite systems or design our mock system?"
+- "I have no specific knowledge about this topic"
+
+# 🚨 CRITICAL: Preserve Architectural Decisions
+
+## What AI MUST NOT Do:
+- ❌ **Delete or modify architectural components** without explicit permission
+- ❌ **Revert agreed-upon designs** without confirming with the user
+- ❌ **Make architectural changes** without understanding the full context
+- ❌ **Assume previous decisions** can be changed without discussion
+
+## What AI MUST Do:
+- ✅ **Preserve all architectural decisions** that were previously agreed upon
+- ✅ **Ask before modifying** any component design or system structure
+- ✅ **Confirm understanding** of why certain architectural choices were made
+- ✅ **Treat the architecture document** as a contract that cannot be changed without permission
+
+## The "Doctor Rule":
+**"First, do no harm"** - Never delete or modify architectural decisions without explicit permission. If you see something that seems wrong, ASK first, don't assume you can fix it.
+
+## Example of WRONG behavior:
+- Deleting the "split Input Manager" design without asking
+- Removing MVP Implementation Strategy sections without permission
+- Moving components to different locations without confirming
+
+## Example of RIGHT behavior:
+- "I notice this section seems incomplete - should I ask about it before making changes?"
+- "The architecture shows X but I think Y might be better - can we discuss this?"
+- "I see we had a different design before - should I restore it?"
