@@ -1,7 +1,7 @@
 # Satellite Resilience System Architecture
 
 ## System Overview
-A robust, fault-tolerant system designed to process satellite data streams (camera, sensors, communications) with resilience against board resets, faulty software, and security threats. Built for M1 ARM chip deployment with AI-powered processing capabilities.
+A robust, fault-tolerant system designed to process satellite data streams (camera, sensors, communications) with resilience against board resets, faulty software, and security threats. Development POC running on M1 ARM chip via Jetpack, designed for eventual Jetson deployment.
 
 ## Core Components
 
@@ -23,6 +23,8 @@ A robust, fault-tolerant system designed to process satellite data streams (came
 
 ### Processing Engines
 Three specialized engines handling different data types:
+
+**Note:** While we've defined three main engine categories, each engine can handle multiple specific tasks. The system is designed to be flexible - new tasks can be added to existing engines or new engines can be created as needed.
 
 #### Picture Processing Engine
 - YOLO object detection (`etc/test/yolo_bus_detection.py`)
@@ -52,6 +54,7 @@ Three specialized engines handling different data types:
 ### Cleanup Queue
 - **Purpose**: Parallel file deletion management
 - **Operation**: Processing Engine marks files for deletion → Cleanup Queue handles actual deletion
+- **Cleanup Timing**: Files are deleted immediately when marked for cleanup
 - **Benefits**: Non-blocking cleanup, better resource management
 
 ## Resilience Components
