@@ -78,6 +78,7 @@ Results saved to detected_bus.jpg
 - Loads a pre-trained YOLOv8 nano model
 - Runs object detection on the image
 - Saves results with bounding boxes
+- **Note:** The logic in this script forms the basis for the core `Picture Processing Engine` component in the main system architecture.
 - Prints detection results with confidence scores
 
 

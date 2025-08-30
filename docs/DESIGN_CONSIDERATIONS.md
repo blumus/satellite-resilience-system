@@ -11,7 +11,7 @@ Directory structure for Satellite Resilience System MVP, supporting Camera Data 
 ## Directory Purpose
 - **`src/`**: Standard Python package organization, component isolation
   - **Subdirs**: `input_managers/`, `processing_engines/`, `queue/`, `output/`, `resilience/` (Security Monitor, Fault Detector, Watchdog Monitor), `utils/` (shared utilities, helper functions), `models/` (data structures, task definitions)
-- **`config/`**: Centralized settings, systemd services for MVP resilience
+- **`config/`**: Centralized settings. For the MVP, this will contain `systemd` service files to provide process-level resilience.
   - **Subdirs**: `systemd/` (service definitions)
 - **`data/`**: Clear lifecycle: input → staging → output (matches architecture)
   - **Subdirs**: `input/camera/`, `input/sensors/`, `staging/` (temporary processed results), `output/`, `logs/`

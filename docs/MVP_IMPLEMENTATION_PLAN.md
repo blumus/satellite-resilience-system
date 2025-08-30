@@ -28,7 +28,7 @@
 
 ---
 
-## 📅 Implementation Phases
+## 📅 Implementation Phases (Sequentially Numbered)
 
 ### **Phase 1-6: Core Implementation**
 **Focus**: Build the fundamental data processing pipeline
@@ -65,30 +65,30 @@
   - Test basic image processing workflow
   - Validate file movement through system
 
-#### **Phase 6: Cleanup Queue Implementation**
-- [ ] **File Cleanup Management**
-  - Implement cleanup queue for processed input files
-  - Add file deletion after successful processing
-  - Test resource management and cleanup
-
 ---
 
 ### **Phase 7-9: Resilience & Integration**
 **Focus**: Add reliability features and complete the system
 
-#### **Phase 1: Output Manager**
+#### **Phase 6: Output Manager**
 - [ ] **File Lifecycle Management**
   - Move processed files from staging to output
   - Implement manifest logging system
   - Add output validation and cleanup
 
-#### **Phase 2: Basic Resilience Features**
+#### **Phase 7: Cleanup Queue Implementation**
+- [ ] **File Cleanup Management**
+  - Implement cleanup queue for processed input files
+  - Add file deletion after successful processing
+  - Test resource management and cleanup
+
+#### **Phase 8: Basic Resilience Features**
 - [ ] **systemd Service Configuration**
   - Create service definitions for each component
   - Implement automatic restart on failure
   - Add basic health monitoring
 
-#### **Phase 3: End-to-End Testing**
+#### **Phase 9: End-to-End Testing**
 - [ ] **Integration Validation**
   - Test complete data flow from input to output
   - Validate error handling and recovery
@@ -99,19 +99,19 @@
 ### **Phase 10-12: Testing & Demo Preparation**
 **Focus**: Comprehensive testing and demonstration readiness
 
-#### **Phase 1: Testing Framework**
+#### **Phase 10: Testing Framework**
 - [ ] **Unit & Integration Tests**
   - Component-level testing
   - Pipeline integration testing
   - Error scenario validation
 
-#### **Phase 2: Resilience Testing**
+#### **Phase 11: Resilience Testing**
 - [ ] **Failure Simulation**
   - Component crash testing
   - Recovery mechanism validation
   - Performance under failure conditions
 
-#### **Phase 3: Demo Preparation**
+#### **Phase 12: Demo Preparation**
 - [ ] **Working Demonstration**
   - Sample image processing workflow
   - Failure and recovery demonstration

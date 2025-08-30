@@ -212,6 +212,8 @@ The items listed below are potential next steps that can be pursued after the MV
   - **Watchdog Monitor**: Implements complex, fault-dependent responses (e.g., restarting a component vs. resetting the system).
 
 ## System Block Diagram
+**Note:** This diagram represents the complete target architecture. The MVP implementation focuses on the **Camera Data Flow** path: Camera → File Input Manager → Processing Queue → Picture Processing Engine → Output Manager → Cleanup Queue.
+
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   Camera        │    │   Sensors       │    │ Ground Control  │
