@@ -1,0 +1,11 @@
+# Satellite File Input Manager - Systemd Service Definition
+# This file defines the systemd service for the File Input Manager component
+# 
+# Purpose: Automatically restart the File Input Manager if it crashes
+# Architecture Reference: SYSTEM_ARCHITECTURE.md - MVP Implementation Strategy
+# 
+# TODO: Fill in actual systemd configuration when implementing the service
+# - Service type and user
+# - ExecStart command
+# - Restart policy
+# - Dependencies

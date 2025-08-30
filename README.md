@@ -88,6 +88,27 @@ Results saved to detected_bus.jpg
 
 
 
+## Project Structure
+
+```
+satellite-resilience-system/
+├── docs/                          # System architecture and documentation
+├── src/                           # Main application code
+│   ├── input_managers/           # File and command input handling
+│   ├── processing_engines/       # AI processing and data analysis
+│   ├── queue/                    # Task distribution and management
+│   ├── output/                   # Output validation and manifest logging
+│   ├── resilience/               # Fault detection and monitoring
+│   ├── utils/                    # Shared utilities and helpers
+│   └── models/                   # Data structures and task definitions
+├── config/                       # Configuration and systemd services
+├── data/                         # Input, staging, and output directories
+├── tests/                        # Unit and integration tests
+├── scripts/                      # System management scripts
+├── etc/test/                     # YOLO testing environment (existing)
+└── .devcontainer/                # Development container configuration
+```
+
 ## Resources
 - [Ultralytics Documentation](https://docs.ultralytics.com/)
 - [YOLOv8 Paper](https://arxiv.org/abs/2303.07701)

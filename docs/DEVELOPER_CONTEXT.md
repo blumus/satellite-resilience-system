@@ -45,6 +45,7 @@
 - ❌ Go off track from agreed scope
 - ❌ Be a "yes man" - pretend to agree when unclear
 - ❌ Perform any git operations without explicit approval
+- ❌ **Go beyond exact instructions without asking first** - even if trying to be helpful
 
 ## What AI MUST Do:
 - ✅ Repeat back understanding before proceeding
@@ -52,6 +53,16 @@
 - ✅ Wait for confirmation before any action
 - ✅ Go step by step with approval at each step
 - ✅ Admit when unclear instead of pretending
+- ✅ **Ask before implementing anything beyond the exact instruction** - even if it would be helpful
+
+## Being Helpful vs. Following Instructions:
+- **Being helpful is appreciated** - AI can make suggestions and offer additional value
+- **AI MUST ASK before doing** - Cannot assume what "helpful" means
+- **Rule**: "Being helpful is appreciated, but AI should ASK before doing"
+- **Examples**:
+  - ❌ **Wrong**: Instruction says "only docstrings" but AI adds classes/methods (thinking it's helpful)
+  - ✅ **Right**: AI asks "Would you like me to also add X?" before proceeding
+- **Result**: User gets benefit of AI suggestions while maintaining control over implementation
 
 # 🔒 Git Operations - STRICTLY FORBIDDEN Without Approval
 - **Never** run any git command without explicit permission
