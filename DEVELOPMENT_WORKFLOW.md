@@ -40,7 +40,6 @@ Ensure your devcontainer is built and running with all required tools:
 
 ## 🚀 Quick Start
 
-### Option 1: Continuous Development Mode (Recommended)
 ```bash
 # First, create the cluster
 make cluster-create
@@ -48,109 +47,52 @@ make cluster-create
 # Then start development mode
 make dev
 ```
-The workflow is:
+
+**What this does:**
 - **`make cluster-create`**: Creates a k3d cluster named `satellite-dev`
 - **`make dev`**: Builds your application, deploys to Kubernetes, starts file watching, and forwards ports
 
-✅ **Success Indicator**: When `make dev` shows **"Watching for changes..."** - your development environment is ready! This means Skaffold is actively monitoring your code and will automatically rebuild and redeploy whenever you make changes. The terminal stays active to provide this continuous development experience. Press **Ctrl+C** when you're done coding to stop development mode.
+🎉 **SUCCESS! When you see:**
+```
+Watching for changes...
+```
+**Your development environment is ready!** Skaffold is now monitoring your code and will automatically rebuild and redeploy whenever you make changes.
 
-📋 **Log Streaming**: `make dev` automatically streams application logs to your terminal. You'll see:
-- **Health check activity**: Regular `/health` and `/ready` requests from Kubernetes probes
-- **Your application logs**: Server startup messages and request logs  
-- **Build/deploy activity**: When files change and rebuilds happen
-
-Example log output:
+📋 **What you'll see**: `make dev` automatically streams application logs:
 ```
 [hello-server] Starting hello server on http://0.0.0.0:8080
 [hello-server] [2025-09-04 22:49:28] "GET /health HTTP/1.1" 200 -
-[hello-server] [2025-09-04 22:49:43] "GET /ready HTTP/1.1" 200 -
 Watching for changes...
 ```
 
 **Test your application (in a new terminal):**
 ```bash
-# Direct access via NodePort (no port-forward needed)
-curl http://localhost:30080/        # Returns: hello
-curl http://localhost:30080/health  # Returns: healthy
-curl http://localhost:30080/ready   # Returns: ready
-
-# Or via port-forward (automatic with make dev)
+# Via port-forward (automatic with make dev)
 curl http://localhost:8081/         # Returns: hello
 curl http://localhost:8081/health   # Returns: healthy
 curl http://localhost:8081/ready    # Returns: ready
-```
 
-### Option 2: Manual Build/Deploy Workflow
-```bash
-# First, create the cluster
-make cluster-create
-
-# Build, deploy, and access your application
-make build deploy
-make port-forward
-```
-This alternative workflow gives you more control:
-- **`make build`**: Builds Docker image and loads it into k3d cluster
-- **`make deploy`**: Deploys the built image to Kubernetes using saved build artifacts
-- **`make port-forward`**: Starts port forwarding to access the application
-
-**Note**: Use `make clean` before building if you need to remove previous deployments
-
-**Test your application:**
-```bash
-# Direct access via NodePort (works immediately after make deploy)
+# Or direct access via NodePort
 curl http://localhost:30080/        # Returns: hello
 curl http://localhost:30080/health  # Returns: healthy
 curl http://localhost:30080/ready   # Returns: ready
-
-# Or via port-forward (after running make port-forward)
-curl http://localhost:8081/         # Returns: hello
-curl http://localhost:8081/health   # Returns: healthy
-curl http://localhost:8081/ready    # Returns: ready
 ```
 
-**When to use this workflow:**
-- When you want explicit control over each step
-- For debugging build or deployment issues
-- When you don't need continuous file watching
-- For production-like deployment testing
+**Make Code Changes:**
+Edit `hello_server.py` - Skaffold automatically rebuilds and redeploys in seconds!
 
-### 3. Make Code Changes
-
-#### For Option 1 (`make dev`) - Automatic File Watching
-Edit the `hello_server.py` file - Skaffold will automatically:
-- Detect file changes
-- Rebuild the lightweight application image (using `Dockerfile.app`)
-- Redeploy to Kubernetes
-- Forward ports for immediate access
-
-**Files watched for changes:**
-- `hello_server.py` (main application file)
-- `Dockerfile.app` (container configuration)
-- `k8s/*.yaml` (Kubernetes manifests)
-
-**Note**: Changes are deployed in seconds, not minutes, thanks to the optimized application Dockerfile.
-
-#### For Option 2 (`make build deploy`) - Manual Rebuild Required
-After editing `hello_server.py`, you must manually rebuild and redeploy:
-```bash
-# After making code changes
-make build deploy
-```
-
-**No automatic file watching** - you control when rebuilds happen.
 
 ## 📚 Available Commands
 
 ### 🔧 Cluster Management Commands
 
-| Command | Description | Use Case |
-|---------|-------------|----------|
-| `make cluster-create` | Create new k3d cluster (smart detection) | First time setup |
-| `make cluster-delete` | Delete cluster and cleanup | Remove everything |
-| `make cluster-start` | Start stopped cluster | Resume work |
-| `make cluster-stop` | Stop running cluster | Pause work |
-| `make cluster-status` | Show cluster status | Check what's running |
+| Command | Description | Example Output |
+|---------|-------------|----------------|
+| `make cluster-create` | Create new k3d cluster (smart detection) | `✅ Cluster created successfully` |
+| `make cluster-delete` | Delete cluster and cleanup | `✅ Cluster deleted` |
+| `make cluster-start` | Start stopped cluster | `✅ Cluster satellite-dev started` |
+| `make cluster-stop` | Stop running cluster | `✅ Cluster satellite-dev stopped` |
+| `make cluster-status` | Show cluster status | `satellite-dev running` |
 
 **Key Features:**
 - **Smart detection** - Won't recreate existing clusters
@@ -160,11 +102,11 @@ make build deploy
 
 ### 🔄 Development Commands
 
-| Command | Description | File Watching | Use Case |
-|---------|-------------|---------------|----------|
-| `make dev` | Continuous development mode | ✅ Automatic | Daily development |
-| `make build` | Build Docker image only | ❌ No | Manual build control |
-| `make deploy` | Deploy using build artifacts | ❌ No | Manual deploy control |
+| Command | Description | What You'll See |
+|---------|-------------|-----------------|
+| `make dev` | Continuous development mode | `Watching for changes...` |
+| `make build` | Build Docker image only | `✅ Build completed` |
+| `make deploy` | Deploy using build artifacts | `✅ Deployment successful` |
 
 **Key Behaviors:**
 - **`make dev`** - Streams logs, watches files, requires existing cluster
@@ -173,142 +115,19 @@ make build deploy
 
 ### 🛠️ Utility Commands
 
-| Command | Description | Use Case |
-|---------|-------------|----------|
-| `make clean` | Remove all deployments | Clean slate, troubleshooting |
-| `make logs` | Show live application logs | Debugging, monitoring |
-| `make port-forward` | Start port forwarding | Access application locally |
-| `make debug` | Start debug mode | Advanced troubleshooting |
-| `make help` | Show all available commands | Quick reference |
+| Command | Description | Quick Example |
+|---------|-------------|---------------|
+| `make clean` | Remove all deployments | `✅ Deployments removed` |
+| `make logs` | Show live application logs | `[hello-server] GET /health 200` |
+| `make port-forward` | Start port forwarding | `Access at: http://localhost:8081` |
+| `make debug` | Start debug mode | `Debug port: 5678` |
+| `make help` | Show all available commands | Lists all make targets |
 
 **Key Features:**
 - **All commands** - Protected with cluster existence checks
 - **`make logs`** - Live streaming with health check activity
 - **`make port-forward`** - Uses port 8081 to avoid conflicts
 
-## 🔄 Common Workflows
-
-### Workflow Comparison
-
-| Aspect | `make dev` (Option 1) | `make build deploy` (Option 2) |
-|--------|----------------------|--------------------------------|
-| **Use Case** | Continuous development | Manual control, debugging |
-| **File Watching** | ✅ Automatic | ❌ Manual rebuild needed |
-| **Speed** | ⚡ Instant rebuilds | 🐌 Manual rebuild cycle |
-| **Control** | 🔄 Automated | 🎛️ Step-by-step control |
-| **Terminal** | Stays active (watching) | Returns to prompt |
-| **Log Streaming** | ✅ Automatic (live logs) | ❌ Manual (`make logs`) |
-| **Best For** | Active coding sessions | Testing, debugging, CI/CD-like |
-
-### Daily Development Workflow (Option 1: Continuous)
-```bash
-# Start your day - ensure cluster exists
-make cluster-create  # (only needed if cluster doesn't exist)
-
-# Start development mode  
-make dev
-
-# Make code changes to hello_server.py
-# Skaffold automatically rebuilds and redeploys in seconds
-
-# Check logs if needed (in another terminal)
-make logs
-
-# Test health endpoints
-curl http://localhost:8081/health
-curl http://localhost:8081/ready
-
-# End of day - stop development (Ctrl+C) and optionally stop cluster
-make cluster-stop
-```
-
-### Manual Build/Deploy Workflow (Option 2: Control)
-```bash
-# Start your day - ensure cluster exists
-make cluster-create  # (only needed if cluster doesn't exist)
-
-# Manual build and deploy cycle
-make clean build deploy
-
-# Start port forwarding (in background or separate terminal)
-make port-forward &
-
-# Test your application
-curl http://localhost:8081/
-curl http://localhost:8081/health
-
-# Make code changes, then repeat build/deploy
-make build deploy
-
-# Check logs
-make logs
-
-# End of day - stop cluster (optional)
-make cluster-stop
-```
-
-### First Time Setup
-```bash
-# Create cluster first
-make cluster-create
-
-# Start development
-make dev
-
-# Verify everything is working
-make cluster-status
-make logs
-
-# Test the application
-curl http://127.0.0.1:8082/health
-```
-
-### Testing Workflow
-```bash
-# Create fresh environment
-make cluster-delete cluster-create
-
-# Deploy once for testing
-make build deploy
-
-# Check application health
-curl http://127.0.0.1:8082/health
-curl http://127.0.0.1:8082/ready
-
-# View logs
-make logs
-
-# Clean up
-make clean
-```
-
-### Debugging Workflow
-```bash
-# Start debug mode
-make debug
-
-# Application runs with debug capabilities
-# Set breakpoints in your IDE
-# Attach debugger to port-forwarded service
-
-# View detailed logs
-make logs
-```
-
-### CI/CD Simulation
-```bash
-# Simulate CI/CD pipeline
-make cluster-create
-make build
-make deploy
-
-# Test the deployment
-curl http://127.0.0.1:8082/health
-curl http://127.0.0.1:8083/health  # NodePort access
-
-# Clean up
-make cluster-delete
-```
 
 
 ## 🔧 Configuration
@@ -382,8 +201,8 @@ kubectl get pods
 make logs
 
 # Test health endpoints directly
-curl http://127.0.0.1:8082/health
-curl http://127.0.0.1:8082/ready
+curl http://localhost:8081/health
+curl http://localhost:8081/ready
 ```
 
 ### Build Issues
@@ -405,7 +224,97 @@ kubectl get services
 netstat -tulpn | grep :808
 
 # Kill processes using ports if needed
-lsof -ti:8082 | xargs kill -9
+lsof -ti:8081 | xargs kill -9
+```
+
+---
+
+## 🔧 Detailed Troubleshooting
+
+### **❌ Issue: Terminal "Stuck" or Hanging**
+
+**Symptoms:**
+- `make dev` command doesn't return to prompt
+- Terminal appears frozen after running Skaffold commands
+
+**Cause:** 
+- Skaffold runs in watch mode (continuous monitoring)
+- This is NORMAL behavior, not a bug
+
+**Solutions:**
+```bash
+# Option 1: Use manual workflow instead
+make build deploy
+make port-forward
+
+# Option 2: Exit watch mode
+Ctrl+C              # Exit current command
+```
+
+---
+
+### **❌ Issue: Skaffold Building Wrong Dockerfile**
+
+**Symptoms:**
+- Very slow builds (minutes instead of seconds)
+- Build includes Docker, kubectl, development tools
+- "Building devcontainer" messages
+
+**Diagnosis:**
+```bash
+# Check which Dockerfile Skaffold is using
+cat skaffold.yaml | grep dockerfile
+# Should show: dockerfile: Dockerfile.app
+```
+
+**Solution:**
+```bash
+# Verify correct configuration in skaffold.yaml
+build:
+  artifacts:
+  - image: satellite-processor
+    context: .
+    docker:
+      dockerfile: Dockerfile.app  # ← Should be this
+```
+
+---
+
+### **❌ Issue: Can't Access Application**
+
+**Symptoms:**
+- `curl: Connection refused` errors
+- Can't reach http://localhost:30080
+- Port forwarding not working
+
+**Diagnosis Steps:**
+```bash
+# 1. Check if pods are running
+kubectl get pods
+# Should show: hello-server-xxx Running
+
+# 2. Check services
+kubectl get services  
+# Should show: hello-server-service and hello-server-nodeport
+
+# 3. Check cluster status
+make cluster-status
+
+# 4. Test both access methods
+curl http://localhost:8081/health    # Port-forward
+curl http://localhost:30080/health   # NodePort
+```
+
+**Solutions:**
+```bash
+# If pods aren't running
+make clean deploy
+
+# If services missing
+kubectl apply -f k8s/service.yaml
+
+# If ports blocked
+make port-forward  # In separate terminal
 ```
 
 ## 📁 File Structure
@@ -465,232 +374,7 @@ The system now runs a **simple Python HTTP server** instead of the complex satel
 
 
 
-# 🚨 Troubleshooting Guide
 
-## 🔧 Common Issues & Solutions
-
-### **❌ Issue: Terminal "Stuck" or Hanging**
-
-**Symptoms:**
-- `make dev` command doesn't return to prompt
-- Terminal appears frozen after running Skaffold commands
-- Can't run other commands
-
-**Cause:** 
-- Skaffold runs in watch mode (continuous monitoring)
-- This is NORMAL behavior, not a bug
-
-**Solutions:**
-```bash
-# Option 1: Use separate commands (RECOMMENDED)
-make cluster-ensure  # Prepare cluster
-make build          # Build application  
-make build deploy   # Build and deploy
-make test           # Test endpoints
-
-# Option 2: Exit watch mode
-Ctrl+C              # Exit current command
-```
-
-**Prevention:**
-- Use Option 1 workflow commands instead of `make dev`
-- Understand that `make dev` is meant to run continuously
-
----
-
-### **❌ Issue: Skaffold Building Wrong Dockerfile**
-
-**Symptoms:**
-- Very slow builds (minutes instead of seconds)
-- Build includes Docker, kubectl, development tools
-- Large image sizes
-- "Building devcontainer" messages
-
-**Cause:**
-- Skaffold using `Dockerfile` (devcontainer) instead of `Dockerfile.app`
-
-**Diagnosis:**
-```bash
-# Check which Dockerfile Skaffold is using
-cat skaffold.yaml | grep dockerfile
-# Should show: dockerfile: Dockerfile.app
-```
-
-**Solution:**
-```bash
-# Verify correct configuration in skaffold.yaml
-build:
-  artifacts:
-  - image: satellite-processor
-    context: .
-    docker:
-      dockerfile: Dockerfile.app  # ← Should be this
-```
-
----
-
-### **❌ Issue: Can't Access Application**
-
-**Symptoms:**
-- `curl: Connection refused` errors
-- Can't reach http://localhost:30080
-- Port forwarding not working
-
-**Diagnosis Steps:**
-```bash
-# 1. Check if pods are running
-kubectl get pods
-# Should show: hello-server-xxx Running
-
-# 2. Check services
-kubectl get services  
-# Should show: hello-server-service and hello-server-nodeport
-
-# 3. Check cluster status
-make cluster-status
-```
-
-**Solutions:**
-```bash
-# If pods not running:
-make build deploy          # Rebuild and redeploy
-
-# If services missing:
-make clean build deploy    # Clean, build and redeploy
-
-# If cluster issues:
-make cluster-delete cluster-create               # Restart entire cluster
-
-# Test endpoints:
-make test                  # Verify all endpoints work
-```
-
----
-
-### **❌ Issue: Build Failures**
-
-**Symptoms:**
-- Docker build errors
-- "Package not found" errors
-- Image build timeouts
-
-**Common Causes & Solutions:**
-
-#### **Python Package Issues:**
-```bash
-# Check if using correct base image
-grep "FROM" Dockerfile.app
-# Should show: FROM python:3.10-slim
-
-# Verify hello_server.py exists
-ls -la hello_server.py
-```
-
-#### **Network/Download Issues:**
-```bash
-# Retry build
-make build
-
-# Check Docker daemon
-docker ps
-
-# Clear build cache if needed
-docker system prune -f
-```
-
----
-
-### **❌ Issue: Cluster Won't Start**
-
-**Symptoms:**
-- k3d cluster creation fails
-- "Cluster already exists" errors
-- kubectl context issues
-
-**Diagnosis:**
-```bash
-# Check existing clusters
-k3d cluster list
-
-# Check Docker is running
-docker ps
-```
-
-**Solutions:**
-```bash
-# If cluster exists but stopped:
-make cluster-start
-
-# If cluster corrupted:
-make cluster-delete
-make cluster-create
-
-# If Docker issues:
-# Restart Docker daemon (depends on system)
-```
-
----
-
-### **❌ Issue: Port Conflicts**
-
-**Symptoms:**
-- "Port already in use" errors
-- Can't bind to port 8081/30080
-- Port forwarding fails
-
-**Diagnosis:**
-```bash
-# Check what's using ports
-lsof -i :8081
-lsof -i :30080
-netstat -tulpn | grep :808
-```
-
-**Solutions:**
-```bash
-# Kill processes using ports
-lsof -ti:8081 | xargs kill -9
-lsof -ti:30080 | xargs kill -9
-
-# Or use different ports in Makefile/k8s configs
-```
-
----
-
-### **❌ Issue: Health Check Failures**
-
-**Symptoms:**
-- Pods stuck in "Not Ready" state
-- Health check endpoints return errors
-- Deployment rollout stuck
-
-**Diagnosis:**
-```bash
-# Check pod status
-kubectl get pods
-kubectl describe pod <pod-name>
-
-# Check logs
-make logs-once
-
-# Test health endpoints directly
-kubectl port-forward service/hello-server-service 8081:8080 &
-curl http://localhost:8081/health
-```
-
-**Solutions:**
-```bash
-# If hello_server.py issues:
-# Check the server code is correct
-
-# If timeout issues:
-# Check resource limits in k8s/deployment.yaml
-
-# Redeploy if needed:
-make clean build deploy
-```
-
----
 
 ## 🔍 Diagnostic Commands
 
