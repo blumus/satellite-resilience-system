@@ -1,0 +1,56 @@
+apiVersion: skaffold/v4beta13
+kind: Config
+metadata:
+  name: satellite-processing-system
+
+# Build configuration
+build:
+  artifacts:
+  - image: satellite-processor
+    context: .
+    docker:
+      dockerfile: Dockerfile.app
+  tagPolicy:
+    envTemplate:
+      template: "{{.IMAGE_NAME}}:{{.USER}}-{{.GIT_COMMIT_SHORT}}"
+  local:
+    push: false  # Don't push to registry for local k3d development
+
+# Deploy configuration
+manifests:
+  rawYaml:
+    - k8s/configmap.yaml
+    - k8s/deployment.yaml
+    - k8s/service.yaml
+
+# Port forwarding for local development
+# Note: Disabled default port forwarding to avoid conflicts
+# portForward:
+# - resourceType: service
+#   resourceName: hello-server-service
+#   port: 8080
+#   localPort: 8080
+
+# Profiles for different environments
+profiles:
+# Local development with k3d
+- name: local-k3d
+  activation:
+  - env: SKAFFOLD_PROFILE=local-k3d
+  build:
+    local:
+      push: false
+      useDockerCLI: true
+    cluster:
+      loadImages: true
+      kubeContext: k3d-satellite-dev
+  portForward:
+  - resourceType: service
+    resourceName: hello-server-service
+    port: 8080
+    localPort: 8081
+
+# Testing profile
+- name: test
+  activation:
+  - env: SKAFFOLD_PROFILE=test

@@ -3,6 +3,9 @@
 	"build": {
 		"dockerfile": "../Dockerfile"
 	},
+	"mounts": [
+		"source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+	],
 	"overrideCommand": true,
 	"workspaceMount": "source=${localWorkspaceFolder},target=/home/extra,type=bind,consistency=cached",
 	"workspaceFolder": "/home/extra",
@@ -11,7 +14,9 @@
 			"extensions": [
 				"ms-python.python",
 				"ms-python.black-formatter",
-				"ms-python.flake8"
+				"ms-python.flake8",
+				"ms-vscode.vscode-docker",
+				"ms-kubernetes-tools.vscode-kubernetes-tools"
 			],
 			"settings": {
 				"python.defaultInterpreterPath": "/usr/local/bin/python",
@@ -22,7 +27,8 @@
 	},
 	"runArgs": [
 		"--network=host",
-		"--memory=4g"
+		"--memory=4g",
+		"--privileged"
 	],
 	"shutdownAction": "stopContainer"
 }

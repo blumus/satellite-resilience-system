@@ -3,3 +3,5 @@
 *.pt
 __pycache__/
 *.pyc
+build-output.json
+data/logs
